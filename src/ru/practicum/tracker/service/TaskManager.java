@@ -1,35 +1,37 @@
-package ru.practicum.tracker;
+package ru.practicum.tracker.service;
 
-import java.util.HashMap;
+import ru.practicum.tracker.model.Epic;
+import ru.practicum.tracker.model.Subtask;
+import ru.practicum.tracker.model.Task;
+import ru.practicum.tracker.model.TaskStatus;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class TaskManager {
-    private int idCounter = 1;
+
 
     private final HashMap<Integer, Task> tasks = new HashMap<>();
     private final HashMap<Integer, Epic> epics = new HashMap<>();
     private final HashMap<Integer, Subtask> subtasks = new HashMap<>();
 
-    public Task createTask(String name, String description) {
-        Task task = new Task(name, description, idCounter++);
+    public Task createTask(Task task) {
         tasks.put(task.getId(), task);
         return task;
     }
 
-    public Epic createEpic(String name, String description) {
-        Epic epic = new Epic(name, description, idCounter++);
+    public Epic createEpic(Epic epic) {
         epics.put(epic.getId(), epic);
         return epic;
     }
 
-    public Subtask createSubtask(String name, String description, int epicId) {
-        if (!epics.containsKey(epicId)) {
+    public Subtask createSubtask(Subtask subtask) {
+        if (!epics.containsKey(subtask.getEpicId())) {
             return null;
         }
-        Subtask subtask = new Subtask(name, description, idCounter++, epicId);
         subtasks.put(subtask.getId(), subtask);
-        epics.get(epicId).addSubtaskId(subtask.getId());
-        updateEpicStatus(epicId);
+        epics.get(subtask.getEpicId()).addSubtaskId(subtask.getId());
+        updateEpicStatus(subtask.getEpicId());
         return subtask;
     }
 
@@ -45,6 +47,21 @@ public class TaskManager {
         return new ArrayList<>(subtasks.values());
     }
 
+    // Получить задачу по ID
+    public Task getTask(int id) {
+        return tasks.get(id);
+    }
+
+    // Получить эпик по ID
+    public Epic getEpic(int id) {
+        return epics.get(id);
+    }
+
+    // Получить подзадачу по ID
+    public Subtask getSubtask(int id) {
+        return subtasks.get(id);
+    }
+
     public void updateTask(Task task) {
         tasks.put(task.getId(), task);
     }
@@ -54,32 +71,42 @@ public class TaskManager {
         updateEpicStatus(subtask.getEpicId());
     }
 
+    public void updateEpic(Epic epic) {
+        epics.put(epic.getId(), epic);
+        updateEpicStatus(epic.getId());
+    }
+
     public void deleteTask(int id) {
-        tasks.remove(id);
+        Task task = tasks.get(id);
+        if (task != null) {
+            tasks.remove(id);
+        }
     }
 
     public void deleteSubtask(int id) {
-        Subtask subtask = subtasks.remove(id);
+        Subtask subtask = getSubtask(id); // Используем метод getSubtask
         if (subtask != null) {
-            Epic epic = epics.get(subtask.getEpicId());
+            Epic epic = getEpic(subtask.getEpicId()); // Используем метод getEpic
             if (epic != null) {
                 epic.removeSubtaskId(id);
                 updateEpicStatus(epic.getId());
             }
+            subtasks.remove(id);
         }
     }
 
     public void deleteEpic(int id) {
-        Epic epic = epics.remove(id);
+        Epic epic = getEpic(id); // Используем метод getEpic
         if (epic != null) {
             for (Integer subtaskId : epic.getSubtaskIds()) {
-                subtasks.remove(subtaskId);
+                deleteSubtask(subtaskId); // Удаляем все подзадачи эпика
             }
+            epics.remove(id);
         }
     }
 
     private void updateEpicStatus(int epicId) {
-        Epic epic = epics.get(epicId);
+        Epic epic = getEpic(epicId); // Используем метод getEpic
         ArrayList<Integer> subtaskIds = epic.getSubtaskIds();
 
         if (subtaskIds.isEmpty()) {
@@ -91,7 +118,7 @@ public class TaskManager {
         boolean allDone = true;
 
         for (int id : subtaskIds) {
-            TaskStatus status = subtasks.get(id).getStatus();
+            TaskStatus status = getSubtask(id).getStatus(); // Используем getSubtask
             if (status != TaskStatus.NEW) {
                 allNew = false;
             }
