@@ -15,7 +15,6 @@ public class Task {
         this.status = TaskStatus.NEW;
     }
 
-    // Дополнительный конструктор без id
     public Task(String name, String description) {
         this.name = name;
         this.description = description;
@@ -42,14 +41,16 @@ public class Task {
         return name;
     }
 
-    @Override
-    public String toString() {
-        return "Задача{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", status=" + status +
-                '}';
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     @Override
@@ -63,5 +64,15 @@ public class Task {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "Task{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", status=" + status +
+                '}';
     }
 }

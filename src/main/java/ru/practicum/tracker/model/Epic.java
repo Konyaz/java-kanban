@@ -3,9 +3,8 @@ package ru.practicum.tracker.model;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class Epic extends Task {
-    private ArrayList<Integer> subtaskIds = new ArrayList<>();
+    private List<Integer> subtaskIds = new ArrayList<>();
 
     public Epic(String name, String description, int id) {
         super(name, description, id);
@@ -15,7 +14,7 @@ public class Epic extends Task {
         super(name, description);
     }
 
-    public ArrayList<Integer> getSubtaskIds() {
+    public List<Integer> getSubtaskIds() {
         return subtaskIds;
     }
 
@@ -33,12 +32,12 @@ public class Epic extends Task {
 
     @Override
     public String toString() {
-        return "Эпик{" +
+        return "Epic{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 ", status=" + status +
-                ", подзадачи=" + subtaskIds +
+                ", subtaskIds=" + subtaskIds +
                 '}';
     }
 }
