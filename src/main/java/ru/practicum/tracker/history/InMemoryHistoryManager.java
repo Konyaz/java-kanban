@@ -10,15 +10,17 @@ import java.util.List;
 
 public class InMemoryHistoryManager implements HistoryManager {
     private static final int HISTORY_LIMIT = 10;
-    private final LinkedList<Task> history = new LinkedList<>();
+    private final List<Task> history = new LinkedList<>(); // Интерфейс List
 
     @Override
     public void add(Task task) {
-        if (task == null) return;
+        if (task == null) {
+            return;
+        }
         Task cloned = cloneTask(task);
-        history.addLast(cloned);
+        history.add(cloned);
         if (history.size() > HISTORY_LIMIT) {
-            history.removeFirst();
+            history.remove(0);
         }
     }
 

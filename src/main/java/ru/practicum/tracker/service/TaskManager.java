@@ -28,7 +28,9 @@ public interface TaskManager {
     void deleteEpic(int id);
     void deleteSubtask(int id);
 
-    void deleteTasks(); // Добавленный метод
+    void deleteTasks();
+    void deleteSubtasks();
+    void deleteEpics();
 
     List<Task> getHistory();
 }

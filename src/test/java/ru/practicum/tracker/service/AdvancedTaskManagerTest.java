@@ -167,4 +167,21 @@ class AdvancedTaskManagerTest {
         manager.deleteTask(task.getId());
         assertFalse(manager.getHistory().contains(task), "Задача должна быть удалена из истории");
     }
+
+    //Проверяет корректность удаления всех подзадач
+    @Test
+    void testDeleteAllSubtasks() {
+        Epic epic = manager.createEpic(new Epic("Test Epic", "Desc"));
+        manager.createSubtask(new Subtask("Subtask 1", "Desc", epic.getId()));
+        manager.deleteSubtasks();
+        assertTrue(manager.getAllSubtasks().isEmpty(), "Подзадачи не удалены");
+    }
+
+    //Проверяет корректность удаления всех эпиков
+    @Test
+    void testDeleteAllEpics() {
+        manager.createEpic(new Epic("Epic 1", "Desc"));
+        manager.deleteEpics();
+        assertTrue(manager.getAllEpics().isEmpty(), "Эпики не удалены");
+    }
 }

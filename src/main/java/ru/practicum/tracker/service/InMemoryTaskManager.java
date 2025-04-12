@@ -5,6 +5,7 @@ import ru.practicum.tracker.model.Epic;
 import ru.practicum.tracker.model.Subtask;
 import ru.practicum.tracker.model.Task;
 import ru.practicum.tracker.model.TaskStatus;
+import ru.practicum.tracker.util.Managers;
 
 import java.util.*;
 
@@ -13,11 +14,9 @@ public class InMemoryTaskManager implements TaskManager {
     private final Map<Integer, Task> tasks = new HashMap<>();
     private final Map<Integer, Epic> epics = new HashMap<>();
     private final Map<Integer, Subtask> subtasks = new HashMap<>();
-    private final HistoryManager historyManager;
+    // Исправлено: инициализация через Managers
+    private final HistoryManager historyManager = Managers.getDefaultHistory();
 
-    public InMemoryTaskManager(HistoryManager historyManager) {
-        this.historyManager = historyManager;
-    }
 
     @Override
     public Task createTask(Task task) {
@@ -64,23 +63,24 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public Task getTask(int id) {
         Task task = tasks.get(id);
-        if (task != null) historyManager.add(task);
+        historyManager.add(task);
         return task;
     }
 
     @Override
     public Epic getEpic(int id) {
         Epic epic = epics.get(id);
-        if (epic != null) historyManager.add(epic);
+        historyManager.add(epic);
         return epic;
     }
 
     @Override
     public Subtask getSubtask(int id) {
         Subtask subtask = subtasks.get(id);
-        if (subtask != null) historyManager.add(subtask);
+        historyManager.add(subtask);
         return subtask;
     }
+
 
     @Override
     public List<Subtask> getEpicSubtasks(int epicId) {
@@ -142,6 +142,21 @@ public class InMemoryTaskManager implements TaskManager {
             }
             subtasks.remove(id);
         }
+    }
+
+    @Override
+    public void deleteSubtasks() {
+        subtasks.clear();
+        for (Epic epic : epics.values()) {
+            epic.clearSubtasks();
+            updateEpicStatus(epic.getId());
+        }
+    }
+
+    @Override
+    public void deleteEpics() {
+        epics.clear();
+        subtasks.clear();
     }
 
     @Override
