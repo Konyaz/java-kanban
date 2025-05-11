@@ -1,53 +1,72 @@
 package ru.practicum.tracker.history;
 
-import ru.practicum.tracker.model.Epic;
-import ru.practicum.tracker.model.Subtask;
 import ru.practicum.tracker.model.Task;
-
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class InMemoryHistoryManager implements HistoryManager {
-    private static final int HISTORY_LIMIT = 10;
-    private final List<Task> history = new LinkedList<>(); // Интерфейс List
+    private static class Node {
+        Task task;
+        Node prev;
+        Node next;
+
+        Node(Task task) {
+            this.task = task;
+        }
+    }
+
+    private final Map<Integer, Node> nodeMap = new HashMap<>();
+    private Node head;
+    private Node tail;
 
     @Override
     public void add(Task task) {
-        if (task == null) {
-            return;
-        }
-        Task cloned = cloneTask(task);
-        history.add(cloned);
-        if (history.size() > HISTORY_LIMIT) {
-            history.remove(0);
+        if (task == null) return;
+        remove(task.getId());
+        linkLast(task);
+    }
+
+    @Override
+    public void remove(int id) {
+        Node node = nodeMap.remove(id);
+        if (node != null) {
+            removeNode(node);
         }
     }
 
     @Override
     public List<Task> getHistory() {
-        return new ArrayList<>(history);
+        List<Task> history = new ArrayList<>();
+        Node current = head;
+        while (current != null) {
+            history.add(current.task);
+            current = current.next;
+        }
+        return history;
     }
 
-    private Task cloneTask(Task task) {
-        if (task instanceof Subtask) {
-            Subtask sub = (Subtask) task;
-            Subtask copy = new Subtask(sub.getName(), sub.getDescription(), sub.getEpicId());
-            copy.setId(sub.getId());
-            copy.setStatus(sub.getStatus());
-            return copy;
-        } else if (task instanceof Epic) {
-            Epic epic = (Epic) task;
-            Epic copy = new Epic(epic.getName(), epic.getDescription());
-            copy.setId(epic.getId());
-            copy.setStatus(epic.getStatus());
-            copy.getSubtaskIds().addAll(epic.getSubtaskIds());
-            return copy;
+    private void linkLast(Task task) {
+        Node newNode = new Node(task);
+        if (head == null) {
+            head = newNode;
         } else {
-            Task copy = new Task(task.getName(), task.getDescription());
-            copy.setId(task.getId());
-            copy.setStatus(task.getStatus());
-            return copy;
+            tail.next = newNode;
+            newNode.prev = tail;
+        }
+        tail = newNode;
+        nodeMap.put(task.getId(), newNode);
+    }
+
+    private void removeNode(Node node) {
+        if (node.prev != null) {
+            node.prev.next = node.next;
+        } else {
+            head = node.next;
+        }
+
+        if (node.next != null) {
+            node.next.prev = node.prev;
+        } else {
+            tail = node.prev;
         }
     }
 }
