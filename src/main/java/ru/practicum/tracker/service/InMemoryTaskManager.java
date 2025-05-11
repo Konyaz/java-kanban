@@ -13,7 +13,6 @@ public class InMemoryTaskManager implements TaskManager {
     private final Map<Integer, Subtask> subtasks = new HashMap<>();
     private final HistoryManager historyManager = Managers.getDefaultHistory();
 
-    // Создание задач
     @Override
     public Task createTask(Task task) {
         task.setId(++counterId);
@@ -41,7 +40,6 @@ public class InMemoryTaskManager implements TaskManager {
         return subtask;
     }
 
-    // Получение списков задач
     @Override
     public List<Task> getAllTasks() {
         return new ArrayList<>(tasks.values());
@@ -57,7 +55,6 @@ public class InMemoryTaskManager implements TaskManager {
         return new ArrayList<>(subtasks.values());
     }
 
-    // Получение задач по id (с добавлением в историю)
     @Override
     public Task getTask(int id) {
         Task task = tasks.get(id);
@@ -85,7 +82,6 @@ public class InMemoryTaskManager implements TaskManager {
         return subtask;
     }
 
-    // Получение подзадач эпика
     @Override
     public List<Subtask> getEpicSubtasks(int epicId) {
         List<Subtask> result = new ArrayList<>();
@@ -101,7 +97,6 @@ public class InMemoryTaskManager implements TaskManager {
         return result;
     }
 
-    // Обновление задач
     @Override
     public void updateTask(Task task) {
         if (tasks.containsKey(task.getId())) {
@@ -129,7 +124,6 @@ public class InMemoryTaskManager implements TaskManager {
         }
     }
 
-    // Удаление задач (с удалением из истории)
     @Override
     public void deleteTask(int id) {
         tasks.remove(id);
@@ -161,7 +155,6 @@ public class InMemoryTaskManager implements TaskManager {
         }
     }
 
-    // Удаление всех задач
     @Override
     public void deleteTasks() {
         tasks.clear();
@@ -182,14 +175,15 @@ public class InMemoryTaskManager implements TaskManager {
         subtasks.clear();
     }
 
-    // Получение истории
     @Override
     public List<Task> getHistory() {
         return historyManager.getHistory();
     }
 
-    // Обновление статуса эпика
-    private void updateEpicStatus(int epicId) {
+    // Исправленный метод для соответствия CheckStyle
+    private void updateEpicStatus(
+            int epicId
+    ) {
         Epic epic = epics.get(epicId);
         if (epic == null) {
             return;
