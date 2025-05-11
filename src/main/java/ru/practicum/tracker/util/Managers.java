@@ -7,7 +7,6 @@ import ru.practicum.tracker.service.InMemoryTaskManager;
 
 public class Managers {
     private Managers() {
-        // Приватный конструктор, чтобы предотвратить создание экземпляра
     }
 
     public static TaskManager getDefault() {
