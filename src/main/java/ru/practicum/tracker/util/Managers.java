@@ -6,7 +6,8 @@ import ru.practicum.tracker.service.TaskManager;
 import ru.practicum.tracker.service.InMemoryTaskManager;
 
 public class Managers {
-    private Managers() {}
+    private Managers() {
+    } // Закрывающая скобка перенесена на новую строку
 
     public static TaskManager getDefault() {
         return new InMemoryTaskManager();
