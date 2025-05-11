@@ -6,9 +6,9 @@ import ru.practicum.tracker.service.TaskManager;
 import ru.practicum.tracker.service.InMemoryTaskManager;
 
 public class Managers {
-    private Managers()
-    { // Открывающая скобка на новой строке
-    } // Закрывающая скобка на отдельной строке
+    private Managers() {
+        // Приватный конструктор, чтобы предотвратить создание экземпляра
+    }
 
     public static TaskManager getDefault() {
         return new InMemoryTaskManager();
