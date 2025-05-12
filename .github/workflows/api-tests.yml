@@ -2,36 +2,7 @@ name: Java Tests
 
 on:
   pull_request:
-    branches:
-      - sprint_6-solution
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Java 21
-        uses: actions/setup-java@v2
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y maven
-
-      - name: Compile and test with Maven
-        run: |
-          mvn clean install
-
-      - name: Run Checkstyle
-        run: |
-          mvn checkstyle:check
-
-      - name: Run Unit Tests
-        run: |
-          mvn test
+    uses: yandex-praktikum/java-kanban/.github/workflows/api-tests.yml@ci

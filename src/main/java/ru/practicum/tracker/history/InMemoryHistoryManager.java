@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Map;
 
 public class InMemoryHistoryManager implements HistoryManager {
+
+    // Лимит на количество задач в истории
+    private static final int HISTORY_LIMIT = 10;
+
     private static class Node {
         Task task;
         Node prev;
@@ -24,9 +28,23 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     @Override
     public void add(Task task) {
-        if (task == null) return;
+        if (task == null) {
+            return;
+        }
+
+        // Удаляем старую задачу из истории, если она была
         remove(task.getId());
+
+        // Добавляем в конец списка
         linkLast(task);
+
+        // Добавляем в мапу
+        nodeMap.put(task.getId(), tail);
+
+        // Проверка лимита и удаление самой старой задачи, если нужно
+        if (nodeMap.size() > HISTORY_LIMIT) {
+            removeNode(head);
+        }
     }
 
     @Override
@@ -39,15 +57,21 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     @Override
     public List<Task> getHistory() {
-        List<Task> history = new ArrayList<>();
-        Node current = head;
-        while (current != null) {
-            history.add(current.task);
-            current = current.next;
-        }
-        return history;
+        return getTasks();
     }
 
+    // Возвращает список задач в порядке от старых к новым
+    private List<Task> getTasks() {
+        List<Task> tasks = new ArrayList<>();
+        Node current = head;
+        while (current != null) {
+            tasks.add(current.task);
+            current = current.next;
+        }
+        return tasks;
+    }
+
+    // Добавляет новую задачу в конец двусвязного списка
     private void linkLast(Task task) {
         Node newNode = new Node(task);
         if (head == null) {
@@ -57,10 +81,14 @@ public class InMemoryHistoryManager implements HistoryManager {
             newNode.prev = tail;
         }
         tail = newNode;
-        nodeMap.put(task.getId(), newNode);
     }
 
+    // Удаляет узел из двусвязного списка
     private void removeNode(Node node) {
+        if (node == null) {
+            return;
+        }
+
         if (node.prev != null) {
             node.prev.next = node.next;
         } else {
