@@ -21,6 +21,10 @@ public class Task {
         this.status = TaskStatus.NEW;
     }
 
+    public TaskType getType() {
+        return TaskType.TASK;
+    }
+
     public int getId() {
         return id;
     }
