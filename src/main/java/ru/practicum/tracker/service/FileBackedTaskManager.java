@@ -33,9 +33,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
             String line;
-
-            // Считываем заголовок (первая строка)
-            line = reader.readLine();
+            line = reader.readLine(); // заголовок
 
             boolean isHistorySection = false;
             List<Integer> historyIds = new ArrayList<>();
@@ -65,7 +63,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                                 }
                                 break;
                         }
-                        // Обновляем счетчик, чтобы следующий id был больше всех существующих
                         manager.counterId = Math.max(manager.counterId, task.getId());
                     }
                 } else {
@@ -73,10 +70,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 }
             }
 
-            // Увеличиваем counterId, чтобы следующий id был уникальным
             manager.counterId++;
 
-            // Восстанавливаем историю просмотров
             for (int id : historyIds) {
                 if (manager.tasks.containsKey(id)) {
                     manager.historyManager.add(manager.tasks.get(id));
@@ -87,8 +82,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException("Ошибка при загрузке из файла: " + file.getName(), e);
+            throw new ManagerSaveException("Ошибка при загрузке из файла: " + file.getName(), e);
         }
+
         return manager;
     }
 
@@ -167,7 +163,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         save();
     }
 
-    // УБРАЛ вызовы save() из геттеров — чтение не должно сохранять
     @Override
     public Task getTask(int id) {
         return super.getTask(id);
@@ -196,10 +191,11 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             for (Subtask subtask : subtasks.values()) {
                 writer.println(toString(subtask));
             }
+
             writer.println();
             writer.println(historyToString(historyManager));
         } catch (IOException e) {
-            throw new RuntimeException("Ошибка при сохранении в файл: " + file.getName(), e);
+            throw new ManagerSaveException("Ошибка при сохранении в файл: " + file.getName(), e);
         }
     }
 
@@ -254,7 +250,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                     return null;
             }
         } catch (Exception e) {
-            // Игнорируем строки с ошибками, чтобы не ломать загрузку
             return null;
         }
     }
@@ -278,7 +273,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             try {
                 history.add(Integer.parseInt(part));
             } catch (NumberFormatException e) {
-                // Игнорируем ошибки
+                // игнорируем ошибки
             }
         }
         return history;
