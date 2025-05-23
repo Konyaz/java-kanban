@@ -34,8 +34,18 @@ public class Task {
         return name;
     }
 
+    // Добавляем сеттер для name, если нужен (по желанию)
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getDescription() {
         return description;
+    }
+
+    // Добавляем необходимый сеттер
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public TaskStatus getStatus() {

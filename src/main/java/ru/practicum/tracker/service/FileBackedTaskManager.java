@@ -183,7 +183,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         return subtask;
     }
 
-    private void save() {
+    public void save() {
         try (PrintWriter writer = new PrintWriter(new FileWriter(file, StandardCharsets.UTF_8))) {
             writer.println("id,type,name,status,description,epic");
 
