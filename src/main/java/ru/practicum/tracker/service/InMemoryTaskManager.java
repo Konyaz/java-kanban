@@ -19,12 +19,10 @@ public class InMemoryTaskManager implements TaskManager {
     protected final Map<Integer, Subtask> subtasks = new HashMap<>();
     protected HistoryManager historyManager;
 
-    // Конструктор без параметров
     public InMemoryTaskManager() {
         this.historyManager = Managers.getDefaultHistory();
     }
 
-    // Конструктор с HistoryManager
     public InMemoryTaskManager(HistoryManager historyManager) {
         this.historyManager = historyManager;
     }
@@ -47,14 +45,26 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Subtask createSubtask(Subtask subtask) {
-        counterId++;
-        subtask.setId(counterId);
-        subtasks.put(subtask.getId(), subtask);
-        Epic epic = epics.get(subtask.getEpicId());
-        if (epic != null) {
-            epic.addSubtaskId(subtask.getId());
-            updateEpicStatus(epic);
+        // Проверка: существует ли эпик
+        if (!epics.containsKey(subtask.getEpicId())) {
+            return null;
         }
+
+        // Генерация ID заранее, чтобы избежать self-reference
+        int newId = ++counterId;
+
+        // Проверка: подзадача не может ссылаться сама на себя как на эпик
+        if (subtask.getEpicId() == newId) {
+            return null;
+        }
+
+        subtask.setId(newId);
+        subtasks.put(subtask.getId(), subtask);
+
+        Epic epic = epics.get(subtask.getEpicId());
+        epic.addSubtaskId(subtask.getId());
+        updateEpicStatus(epic);
+
         return subtask;
     }
 
