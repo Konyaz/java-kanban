@@ -1,15 +1,13 @@
-package java.ru.practicum.tracker.service;
+package ru.practicum.tracker.service;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import ru.practicum.tracker.history.HistoryManager;
-import ru.practicum.tracker.model.Epic;
-import ru.practicum.tracker.model.Subtask;
-import ru.practicum.tracker.model.Task;
-import ru.practicum.tracker.model.TaskStatus;
-import ru.practicum.tracker.service.TaskManager;
+import ru.practicum.tracker.model.*;
 import ru.practicum.tracker.util.Managers;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,10 +18,12 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AdvancedTaskManagerTest {
     private TaskManager manager;
+    private File tempFile;
 
     @BeforeEach
-    void setUp() {
-        manager = Managers.getDefault(); // Инициализация менеджера перед каждым тестом
+    void setUp() throws IOException {
+        tempFile = Files.createTempFile("tasks", ".csv").toFile();
+        manager = Managers.getFileBackedManager(tempFile);
     }
 
     // Тест на равенство задач по ID
@@ -222,7 +222,7 @@ class AdvancedTaskManagerTest {
     // Проверка сохранения и загрузки пустого менеджера
     @Test
     void shouldSaveAndLoadEmptyManager() {
-        manager.save();
+        ((FileBackedTaskManager) manager).save();
         FileBackedTaskManager loaded = FileBackedTaskManager.loadFromFile(tempFile);
         assertTrue(loaded.getAllTasks().isEmpty());
         assertTrue(loaded.getAllEpics().isEmpty());
@@ -236,7 +236,9 @@ class AdvancedTaskManagerTest {
         Epic epic = manager.createEpic(new Epic("Epic", ""));
         Subtask subtask = manager.createSubtask(new Subtask("Subtask", "", epic.getId()));
 
+        ((FileBackedTaskManager) manager).save();
         FileBackedTaskManager loaded = FileBackedTaskManager.loadFromFile(tempFile);
+
         assertEquals(1, loaded.getAllTasks().size());
         assertEquals(1, loaded.getAllEpics().size());
         assertEquals(1, loaded.getAllSubtasks().size());
@@ -248,7 +250,9 @@ class AdvancedTaskManagerTest {
         Task task = manager.createTask(new Task("Task", "Desc"));
         manager.getTask(task.getId());
 
+        ((FileBackedTaskManager) manager).save();
         FileBackedTaskManager loaded = FileBackedTaskManager.loadFromFile(tempFile);
+
         assertEquals(1, loaded.getHistory().size());
         assertEquals(task.getId(), loaded.getHistory().get(0).getId());
     }
