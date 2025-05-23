@@ -65,6 +65,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                                 }
                                 break;
                         }
+                        // Обновляем счетчик, чтобы следующий id был больше всех существующих
                         manager.counterId = Math.max(manager.counterId, task.getId());
                     }
                 } else {
@@ -72,6 +73,10 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 }
             }
 
+            // Увеличиваем counterId, чтобы следующий id был уникальным
+            manager.counterId++;
+
+            // Восстанавливаем историю просмотров
             for (int id : historyIds) {
                 if (manager.tasks.containsKey(id)) {
                     manager.historyManager.add(manager.tasks.get(id));
@@ -162,25 +167,20 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         save();
     }
 
+    // УБРАЛ вызовы save() из геттеров — чтение не должно сохранять
     @Override
     public Task getTask(int id) {
-        Task task = super.getTask(id);
-        save();
-        return task;
+        return super.getTask(id);
     }
 
     @Override
     public Epic getEpic(int id) {
-        Epic epic = super.getEpic(id);
-        save();
-        return epic;
+        return super.getEpic(id);
     }
 
     @Override
     public Subtask getSubtask(int id) {
-        Subtask subtask = super.getSubtask(id);
-        save();
-        return subtask;
+        return super.getSubtask(id);
     }
 
     public void save() {
@@ -220,36 +220,42 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     protected Task fromString(String value) {
-        String[] parts = value.split(",");
+        String[] parts = value.split(",", 6);
         if (parts.length < 5) {
             return null;
         }
 
-        int id = Integer.parseInt(parts[0]);
-        TaskType type = TaskType.valueOf(parts[1]);
-        String name = parts[2];
-        TaskStatus status = TaskStatus.valueOf(parts[3]);
-        String description = parts[4];
-        switch (type) {
-            case TASK:
-                Task task = new Task(name, description, status);
-                task.setId(id);
-                return task;
-            case EPIC:
-                Epic epic = new Epic(name, description);
-                epic.setId(id);
-                epic.setStatus(status);
-                return epic;
-            case SUBTASK:
-                if (parts.length < 6) {
+        try {
+            int id = Integer.parseInt(parts[0]);
+            TaskType type = TaskType.valueOf(parts[1]);
+            String name = parts[2];
+            TaskStatus status = TaskStatus.valueOf(parts[3]);
+            String description = parts[4];
+
+            switch (type) {
+                case TASK:
+                    Task task = new Task(name, description, status);
+                    task.setId(id);
+                    return task;
+                case EPIC:
+                    Epic epic = new Epic(name, description);
+                    epic.setId(id);
+                    epic.setStatus(status);
+                    return epic;
+                case SUBTASK:
+                    if (parts.length < 6) {
+                        return null;
+                    }
+                    int epicId = Integer.parseInt(parts[5]);
+                    Subtask subtask = new Subtask(name, description, status, epicId);
+                    subtask.setId(id);
+                    return subtask;
+                default:
                     return null;
-                }
-                int epicId = Integer.parseInt(parts[5]);
-                Subtask subtask = new Subtask(name, description, status, epicId);
-                subtask.setId(id);
-                return subtask;
-            default:
-                return null;
+            }
+        } catch (Exception e) {
+            // Игнорируем строки с ошибками, чтобы не ломать загрузку
+            return null;
         }
     }
 
@@ -269,7 +275,11 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         }
         String[] parts = value.split(",");
         for (String part : parts) {
-            history.add(Integer.parseInt(part));
+            try {
+                history.add(Integer.parseInt(part));
+            } catch (NumberFormatException e) {
+                // Игнорируем ошибки
+            }
         }
         return history;
     }

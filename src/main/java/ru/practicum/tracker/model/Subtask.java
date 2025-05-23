@@ -3,13 +3,11 @@ package ru.practicum.tracker.model;
 public class Subtask extends Task {
     private int epicId;
 
-    // Конструктор без статуса, статус по умолчанию NEW
     public Subtask(String name, String description, int epicId) {
         super(name, description);
         this.epicId = epicId;
     }
 
-    // Новый конструктор с передачей статуса
     public Subtask(String name, String description, TaskStatus status, int epicId) {
         super(name, description, status);
         this.epicId = epicId;

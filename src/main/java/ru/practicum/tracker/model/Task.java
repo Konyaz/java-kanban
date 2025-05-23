@@ -1,19 +1,19 @@
 package ru.practicum.tracker.model;
 
+import java.util.Objects;
+
 public class Task {
     private int id;
     private String name;
     private String description;
     private TaskStatus status;
 
-    // Конструктор без статуса, статус по умолчанию NEW
     public Task(String name, String description) {
         this.name = name;
         this.description = description;
         this.status = TaskStatus.NEW;
     }
 
-    // Новый конструктор с передачей статуса
     public Task(String name, String description, TaskStatus status) {
         this.name = name;
         this.description = description;
@@ -34,7 +34,6 @@ public class Task {
         return name;
     }
 
-    // Добавляем сеттер для name, если нужен (по желанию)
     public void setName(String name) {
         this.name = name;
     }
@@ -43,7 +42,6 @@ public class Task {
         return description;
     }
 
-    // Добавляем необходимый сеттер
     public void setDescription(String description) {
         this.description = description;
     }
@@ -56,15 +54,26 @@ public class Task {
         this.status = status;
     }
 
-    // Метод возвращает тип задачи (TASK)
     public TaskType getType() {
         return TaskType.TASK;
     }
 
-    // Метод для копирования задачи
     public Task copy() {
         Task copy = new Task(this.name, this.description, this.status);
         copy.setId(this.id);
         return copy;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Task)) return false;
+        Task task = (Task) o;
+        return id == task.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }
