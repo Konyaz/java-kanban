@@ -1,12 +1,9 @@
 package ru.practicum.tracker.service;
 
 import ru.practicum.tracker.model.*;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
+import java.util.List;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
     private final File file;
@@ -15,13 +12,17 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         this.file = file;
     }
 
+    public File getFile() {
+        return file;
+    }
+
     public static FileBackedTaskManager loadFromFile(File file) {
         FileBackedTaskManager manager = new FileBackedTaskManager(file);
         manager.load();
         return manager;
     }
 
-    private void save() {
+    protected void save() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write("id,type,name,status,description,epic\n");
 
@@ -46,9 +47,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             String content = Files.readString(file.toPath());
             String[] lines = content.split("\n");
 
-            if (lines.length <= 1) {
-                return;
-            }
+            if (lines.length <= 1) return;
 
             for (int i = 1; i < lines.length; i++) {
                 Task task = fromString(lines[i]);
@@ -67,7 +66,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 }
             }
 
-            // Восстановление связей подзадач с эпиками
             for (Subtask subtask : getAllSubtasks()) {
                 Epic epic = getEpic(subtask.getEpicId());
                 if (epic != null) {
@@ -80,13 +78,12 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     private String toString(Task task) {
-        if (task == null) {
-            return "";
-        }
+        if (task == null) return "";
 
         String type = task.getType().name();
-        String epicId = (task.getType() == TaskType.SUBTASK) ?
-                String.valueOf(((Subtask) task).getEpicId()) : "";
+        String epicId = (task.getType() == TaskType.SUBTASK)
+                ? String.valueOf(((Subtask) task).getEpicId())
+                : "";
 
         return String.join(",",
                 String.valueOf(task.getId()),
@@ -99,14 +96,10 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     private Task fromString(String value) {
-        if (value == null || value.isEmpty()) {
-            return null;
-        }
+        if (value == null || value.isEmpty()) return null;
 
         String[] parts = value.split(",");
-        if (parts.length < 6) {
-            return null;
-        }
+        if (parts.length < 6) return null;
 
         int id = Integer.parseInt(parts[0]);
         TaskType type = TaskType.valueOf(parts[1]);
@@ -125,9 +118,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 epic.setStatus(status);
                 return epic;
             case SUBTASK:
-                if (epicId.isEmpty()) {
-                    return null;
-                }
+                if (epicId.isEmpty()) return null;
                 Subtask subtask = new Subtask(name, description, id, Integer.parseInt(epicId));
                 subtask.setStatus(status);
                 return subtask;

@@ -218,4 +218,47 @@ class AdvancedTaskManagerTest {
         }
         assertEquals(15, manager.getHistory().size(), "История должна быть неограниченной");
     }
+
+    // Проверка сохранения и загрузки пустого менеджера
+    @Test
+    void shouldSaveAndLoadEmptyManager() {
+        manager.save();
+        FileBackedTaskManager loaded = FileBackedTaskManager.loadFromFile(tempFile);
+        assertTrue(loaded.getAllTasks().isEmpty());
+        assertTrue(loaded.getAllEpics().isEmpty());
+        assertTrue(loaded.getAllSubtasks().isEmpty());
+    }
+
+    // Проверка сохранения всех типов задач
+    @Test
+    void shouldSaveAndLoadAllTaskTypes() {
+        Task task = manager.createTask(new Task("Task", "Desc"));
+        Epic epic = manager.createEpic(new Epic("Epic", ""));
+        Subtask subtask = manager.createSubtask(new Subtask("Subtask", "", epic.getId()));
+
+        FileBackedTaskManager loaded = FileBackedTaskManager.loadFromFile(tempFile);
+        assertEquals(1, loaded.getAllTasks().size());
+        assertEquals(1, loaded.getAllEpics().size());
+        assertEquals(1, loaded.getAllSubtasks().size());
+    }
+
+    // Проверка сохранения истории
+    @Test
+    void shouldSaveAndLoadHistory() {
+        Task task = manager.createTask(new Task("Task", "Desc"));
+        manager.getTask(task.getId());
+
+        FileBackedTaskManager loaded = FileBackedTaskManager.loadFromFile(tempFile);
+        assertEquals(1, loaded.getHistory().size());
+        assertEquals(task.getId(), loaded.getHistory().get(0).getId());
+    }
+
+    // Проверка обработки ошибок
+    @Test
+    void shouldThrowExceptionWhenFileCorrupted() {
+        assertThrows(ManagerSaveException.class, () -> {
+            File brokenFile = new File("/invalid/path/tasks.csv");
+            new FileBackedTaskManager(brokenFile).save();
+        });
+    }
 }
