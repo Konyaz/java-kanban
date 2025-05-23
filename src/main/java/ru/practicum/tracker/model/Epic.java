@@ -4,14 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Epic extends Task {
-    private final List<Integer> subtaskIds = new ArrayList<>();
-
-    public Epic(String name, String description, int id) {
-        super(name, description, id);
-    }
+    private List<Integer> subtaskIds;
 
     public Epic(String name, String description) {
         super(name, description);
+        this.subtaskIds = new ArrayList<>();
     }
 
     @Override
@@ -23,35 +20,22 @@ public class Epic extends Task {
         return subtaskIds;
     }
 
-    public void addSubtaskId(int subtaskId) {
-        subtaskIds.add(subtaskId);
+    public void addSubtaskId(int id) {
+        if (!subtaskIds.contains(id)) {
+            subtaskIds.add(id);
+        }
     }
 
-    public void removeSubtaskId(int subtaskId) {
-        subtaskIds.remove(Integer.valueOf(subtaskId));
+    public void removeSubtaskId(int id) {
+        subtaskIds.remove((Integer) id);
     }
 
-    public void clearSubtasks() {
-        subtaskIds.clear();
-    }
-
-    // Новый метод для создания копии объекта
     @Override
     public Epic copy() {
-        Epic copy = new Epic(this.name, this.description, this.id);
-        copy.setStatus(this.status);
-        // subtaskIds не копируем, они отдельные объекты, связанные с Epic
+        Epic copy = new Epic(this.getName(), this.getDescription());
+        copy.setId(this.getId());
+        copy.setStatus(this.getStatus());
+        copy.subtaskIds = new ArrayList<>(this.subtaskIds);
         return copy;
-    }
-
-    @Override
-    public String toString() {
-        return "Epic{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", status=" + status +
-                ", subtaskIds=" + subtaskIds +
-                '}';
     }
 }

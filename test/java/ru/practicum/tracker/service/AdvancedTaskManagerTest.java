@@ -48,10 +48,19 @@ class AdvancedTaskManagerTest {
 
     // Проверка, что эпик не может быть подзадачей самого себя
     @Test
-    void testEpicCannotBeSubtaskOfItself() {
+    void testSubtaskCannotReferenceItselfAsEpic() {
         Epic epic = manager.createEpic(new Epic("Test Epic", "Description"));
-        Subtask invalidSubtask = manager.createSubtask(new Subtask("Invalid", "Desc", epic.getId()));
-        assertNull(invalidSubtask, "Эпик не может быть подзадачей самого себя");
+        // Создаём подзадачу с валидным epicId — она создаётся
+        Subtask subtask = manager.createSubtask(new Subtask("Valid Subtask", "Desc", epic.getId()));
+        assertNotNull(subtask, "Подзадача с валидным epicId должна создаться");
+
+        // Теперь пытаемся создать подзадачу, где epicId равен id подзадачи — это невозможно логически,
+        // но симулируем попытку создания с "нелогичным" epicId — например, epicId == subtask.getId()
+        Subtask invalidSubtask = new Subtask("Invalid Subtask", "Desc", subtask.getId());
+        Subtask result = manager.createSubtask(invalidSubtask);
+
+        // Ожидаем, что менеджер не позволит создать такую подзадачу (вернёт null)
+        assertNull(result, "Подзадача не может ссылаться на себя же как на эпик");
     }
 
     // Проверка, что подзадача не может ссылаться на несуществующий эпик

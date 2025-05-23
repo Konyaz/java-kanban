@@ -32,7 +32,7 @@ public class InMemoryHistoryManager implements HistoryManager {
         // Удаляем старую задачу из истории, если она была
         remove(task.getId());
 
-        // Добавляем копию задачи в конец списка, чтобы история не менялась при обновлении задачи
+        // Добавляем копию задачи в конец списка
         linkLast(task.copy());
 
         // Добавляем в мапу
