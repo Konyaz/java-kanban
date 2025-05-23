@@ -11,11 +11,22 @@ public class Managers {
     private static final String DEFAULT_FILE_NAME = "tasks.csv";
 
     private Managers() {
+        // Приватный конструктор для запрета создания экземпляров утилитного класса
     }
+
 
     public static TaskManager getDefault() {
         return new FileBackedTaskManager(new File(DEFAULT_FILE_NAME));
     }
+
+
+    public static TaskManager getFileBackedManager(File file) {
+        if (file == null) {
+            throw new IllegalArgumentException("Файл не может быть null");
+        }
+        return new FileBackedTaskManager(file);
+    }
+
 
     public static HistoryManager getDefaultHistory() {
         return new InMemoryHistoryManager();
