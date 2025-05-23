@@ -27,6 +27,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     protected void save() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            // Записываем заголовок CSV
             writer.write("id,type,name,status,description,epic\n");
 
             for (Task task : getAllTasks()) {
@@ -50,7 +51,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             String content = Files.readString(file.toPath());
             String[] lines = content.split("\n");
 
-            if (lines.length <= 1) return;
+            if (lines.length <= 1) return; // Если только заголовок или файл пустой
+
+            int maxId = 0;  // Для обновления counterId
 
             for (int i = 1; i < lines.length; i++) {
                 Task task = fromString(lines[i]);
@@ -66,9 +69,16 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                             createSubtask((Subtask) task);
                             break;
                     }
+                    if (task.getId() > maxId) {
+                        maxId = task.getId();
+                    }
                 }
             }
 
+            // Обновляем counterId, чтобы новые задачи получали уникальные ID
+            this.counterId = maxId;
+
+            // Восстанавливаем связи субтасков с эпиками
             for (Subtask subtask : getAllSubtasks()) {
                 Epic epic = getEpic(subtask.getEpicId());
                 if (epic != null) {
