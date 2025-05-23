@@ -27,7 +27,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     protected void save() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            // Записываем заголовок CSV
             writer.write("id,type,name,status,description,epic\n");
 
             for (Task task : getAllTasks()) {
@@ -51,31 +50,42 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             String content = Files.readString(file.toPath());
             String[] lines = content.split("\n");
 
-            if (lines.length <= 1) return; // Если только заголовок или файл пустой
+            if (lines.length <= 1) return;
 
-            int maxId = 0;  // Для обновления counterId
+            int maxId = 0;
 
+            // Сначала загружаем эпики
             for (int i = 1; i < lines.length; i++) {
                 Task task = fromString(lines[i]);
-                if (task != null) {
-                    switch (task.getType()) {
-                        case TASK:
-                            createTask(task);
-                            break;
-                        case EPIC:
-                            createEpic((Epic) task);
-                            break;
-                        case SUBTASK:
-                            createSubtask((Subtask) task);
-                            break;
-                    }
-                    if (task.getId() > maxId) {
-                        maxId = task.getId();
-                    }
+                if (task != null && task.getType() == TaskType.EPIC) {
+                    createEpic((Epic) task);
+                    if (task.getId() > maxId) maxId = task.getId();
                 }
             }
 
-            // Обновляем counterId, чтобы новые задачи получали уникальные ID
+            // Затем задачи TASK
+            for (int i = 1; i < lines.length; i++) {
+                Task task = fromString(lines[i]);
+                if (task != null && task.getType() == TaskType.TASK) {
+                    createTask(task);
+                    if (task.getId() > maxId) maxId = task.getId();
+                }
+            }
+
+            // Затем подзадачи SUBTASK
+            for (int i = 1; i < lines.length; i++) {
+                Task task = fromString(lines[i]);
+                if (task != null && task.getType() == TaskType.SUBTASK) {
+                    Subtask subtask = (Subtask) task;
+                    if (subtask.getId() == subtask.getEpicId()) {
+                        // Эпик не может быть подзадачей самого себя — игнорируем
+                        continue;
+                    }
+                    createSubtask(subtask);
+                    if (task.getId() > maxId) maxId = task.getId();
+                }
+            }
+
             this.counterId = maxId;
 
             // Восстанавливаем связи субтасков с эпиками
@@ -156,6 +166,10 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     @Override
     public Subtask createSubtask(Subtask subtask) {
+        if (subtask.getId() == subtask.getEpicId()) {
+            // Эпик не может быть подзадачей самого себя — игнорируем создание
+            return null;
+        }
         Subtask createdSubtask = super.createSubtask(subtask);
         save();
         return createdSubtask;

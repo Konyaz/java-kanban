@@ -22,6 +22,14 @@ public class Subtask extends Task {
         return epicId;
     }
 
+    // Новый метод для создания копии объекта
+    @Override
+    public Subtask copy() {
+        Subtask copy = new Subtask(this.name, this.description, this.id, this.epicId);
+        copy.setStatus(this.status);
+        return copy;
+    }
+
     @Override
     public String toString() {
         return "Subtask{" +

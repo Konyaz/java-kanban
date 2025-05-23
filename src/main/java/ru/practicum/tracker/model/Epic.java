@@ -35,6 +35,15 @@ public class Epic extends Task {
         subtaskIds.clear();
     }
 
+    // Новый метод для создания копии объекта
+    @Override
+    public Epic copy() {
+        Epic copy = new Epic(this.name, this.description, this.id);
+        copy.setStatus(this.status);
+        // subtaskIds не копируем, они отдельные объекты, связанные с Epic
+        return copy;
+    }
+
     @Override
     public String toString() {
         return "Epic{" +

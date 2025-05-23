@@ -57,6 +57,13 @@ public class Task {
         this.description = description;
     }
 
+    // Новый метод для создания копии объекта
+    public Task copy() {
+        Task copy = new Task(this.name, this.description, this.id);
+        copy.setStatus(this.status);
+        return copy;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
