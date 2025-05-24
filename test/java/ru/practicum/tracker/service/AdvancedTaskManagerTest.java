@@ -1,4 +1,4 @@
-package java.ru.practicum.tracker.service;
+package ru.practicum.tracker.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -7,9 +7,11 @@ import ru.practicum.tracker.model.Epic;
 import ru.practicum.tracker.model.Subtask;
 import ru.practicum.tracker.model.Task;
 import ru.practicum.tracker.model.TaskStatus;
-import ru.practicum.tracker.service.TaskManager;
 import ru.practicum.tracker.util.Managers;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,10 +22,12 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AdvancedTaskManagerTest {
     private TaskManager manager;
+    private File tempFile;
 
     @BeforeEach
-    void setUp() {
-        manager = Managers.getDefault(); // Инициализация менеджера перед каждым тестом
+    void setUp() throws IOException {
+        tempFile = Files.createTempFile("tasks", ".csv").toFile();
+        manager = Managers.getFileBackedManager(tempFile);
     }
 
     // Тест на равенство задач по ID
@@ -48,10 +52,19 @@ class AdvancedTaskManagerTest {
 
     // Проверка, что эпик не может быть подзадачей самого себя
     @Test
-    void testEpicCannotBeSubtaskOfItself() {
+    void testSubtaskCannotReferenceItselfAsEpic() {
         Epic epic = manager.createEpic(new Epic("Test Epic", "Description"));
-        Subtask invalidSubtask = manager.createSubtask(new Subtask("Invalid", "Desc", epic.getId()));
-        assertNull(invalidSubtask, "Эпик не может быть подзадачей самого себя");
+        // Создаём подзадачу с валидным epicId — она создаётся
+        Subtask subtask = manager.createSubtask(new Subtask("Valid Subtask", "Desc", epic.getId()));
+        assertNotNull(subtask, "Подзадача с валидным epicId должна создаться");
+
+        // Теперь пытаемся создать подзадачу, где epicId равен id подзадачи — это невозможно логически,
+        // но симулируем попытку создания с "нелогичным" epicId — например, epicId == subtask.getId()
+        Subtask invalidSubtask = new Subtask("Invalid Subtask", "Desc", subtask.getId());
+        Subtask result = manager.createSubtask(invalidSubtask);
+
+        // Ожидаем, что менеджер не позволит создать такую подзадачу (вернёт null)
+        assertNull(result, "Подзадача не может ссылаться на себя же как на эпик");
     }
 
     // Проверка, что подзадача не может ссылаться на несуществующий эпик
@@ -217,5 +230,52 @@ class AdvancedTaskManagerTest {
             manager.getTask(task.getId());
         }
         assertEquals(15, manager.getHistory().size(), "История должна быть неограниченной");
+    }
+
+    // Проверка сохранения и загрузки пустого менеджера
+    @Test
+    void shouldSaveAndLoadEmptyManager() {
+        ((FileBackedTaskManager) manager).save();
+        FileBackedTaskManager loaded = FileBackedTaskManager.loadFromFile(tempFile);
+        assertTrue(loaded.getAllTasks().isEmpty());
+        assertTrue(loaded.getAllEpics().isEmpty());
+        assertTrue(loaded.getAllSubtasks().isEmpty());
+    }
+
+    // Проверка сохранения всех типов задач
+    @Test
+    void shouldSaveAndLoadAllTaskTypes() {
+        Task task = manager.createTask(new Task("Task", "Desc"));
+        Epic epic = manager.createEpic(new Epic("Epic", ""));
+        Subtask subtask = manager.createSubtask(new Subtask("Subtask", "", epic.getId()));
+
+        ((FileBackedTaskManager) manager).save();
+        FileBackedTaskManager loaded = FileBackedTaskManager.loadFromFile(tempFile);
+
+        assertEquals(1, loaded.getAllTasks().size());
+        assertEquals(1, loaded.getAllEpics().size());
+        assertEquals(1, loaded.getAllSubtasks().size());
+    }
+
+    // Проверка сохранения истории
+    @Test
+    void shouldSaveAndLoadHistory() {
+        Task task = manager.createTask(new Task("Task", "Desc"));
+        manager.getTask(task.getId());
+
+        ((FileBackedTaskManager) manager).save();
+        FileBackedTaskManager loaded = FileBackedTaskManager.loadFromFile(tempFile);
+
+        assertEquals(1, loaded.getHistory().size());
+        assertEquals(task.getId(), loaded.getHistory().get(0).getId());
+    }
+
+    // Проверка обработки ошибок
+    @Test
+    void shouldThrowExceptionWhenFileCorrupted() {
+        assertThrows(ManagerSaveException.class, () -> {
+            File brokenFile = new File("/invalid/path/tasks.csv");
+            new FileBackedTaskManager(brokenFile).save();
+        });
     }
 }
