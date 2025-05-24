@@ -1,15 +1,12 @@
 package ru.practicum.tracker.service;
 
 import ru.practicum.tracker.history.HistoryManager;
-import ru.practicum.tracker.model.Epic;
-import ru.practicum.tracker.model.Subtask;
-import ru.practicum.tracker.model.Task;
-import ru.practicum.tracker.model.TaskStatus;
-import ru.practicum.tracker.model.TaskType;
+import ru.practicum.tracker.model.*;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
     private final File file;
@@ -210,7 +207,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         if (task instanceof Subtask) {
             sb.append(((Subtask) task).getEpicId());
         } else {
-            sb.append("");
         }
         return sb.toString();
     }

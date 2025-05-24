@@ -1,8 +1,12 @@
 package ru.practicum.tracker.service;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import ru.practicum.tracker.history.HistoryManager;
-import ru.practicum.tracker.model.*;
+import ru.practicum.tracker.model.Epic;
+import ru.practicum.tracker.model.Subtask;
+import ru.practicum.tracker.model.Task;
+import ru.practicum.tracker.model.TaskStatus;
 import ru.practicum.tracker.util.Managers;
 
 import java.io.File;
