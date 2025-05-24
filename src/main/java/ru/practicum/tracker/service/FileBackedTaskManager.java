@@ -29,8 +29,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         FileBackedTaskManager manager = new FileBackedTaskManager(file);
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
-            String line;
-            line = reader.readLine(); // заголовок
+            String line = reader.readLine(); // заголовок
 
             boolean isHistorySection = false;
             List<Integer> historyIds = new ArrayList<>();
@@ -44,23 +43,24 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 if (!isHistorySection) {
                     Task task = manager.fromString(line);
                     if (task != null) {
+                        int id = task.getId();
                         switch (task.getType()) {
                             case TASK:
-                                manager.tasks.put(task.getId(), task);
+                                manager.tasks.put(id, task);
                                 break;
                             case EPIC:
-                                manager.epics.put(task.getId(), (Epic) task);
+                                manager.epics.put(id, (Epic) task);
                                 break;
                             case SUBTASK:
                                 Subtask subtask = (Subtask) task;
-                                manager.subtasks.put(subtask.getId(), subtask);
+                                manager.subtasks.put(id, subtask);
                                 Epic epic = manager.epics.get(subtask.getEpicId());
                                 if (epic != null) {
-                                    epic.addSubtaskId(subtask.getId());
+                                    epic.addSubtaskId(id);
                                 }
                                 break;
                         }
-                        manager.counterId = Math.max(manager.counterId, task.getId());
+                        manager.counterId = Math.max(manager.counterId, id);
                     }
                 } else {
                     historyIds = historyFromString(line);
@@ -203,7 +203,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         sb.append(task.getName()).append(",");
         sb.append(task.getStatus()).append(",");
         sb.append(task.getDescription()).append(",");
-
         if (task instanceof Subtask) {
             sb.append(((Subtask) task).getEpicId());
         }
@@ -260,15 +259,14 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     protected static List<Integer> historyFromString(String value) {
         List<Integer> history = new ArrayList<>();
-        if (value.isEmpty()) {
+        if (value == null || value.isEmpty()) {
             return history;
         }
         String[] parts = value.split(",");
         for (String part : parts) {
             try {
                 history.add(Integer.parseInt(part));
-            } catch (NumberFormatException e) {
-                // игнорируем ошибки
+            } catch (NumberFormatException ignored) {
             }
         }
         return history;
