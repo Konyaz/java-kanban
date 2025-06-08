@@ -30,6 +30,8 @@ public class Subtask extends Task {
     public Subtask copy() {
         Subtask copy = new Subtask(this.getName(), this.getDescription(), this.getStatus(), this.epicId);
         copy.setId(this.getId());
+        copy.setDuration(this.getDuration());
+        copy.setStartTime(this.getStartTime());
         return copy;
     }
 }
