@@ -3,7 +3,6 @@ package ru.practicum.tracker.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.practicum.tracker.model.*;
-import ru.practicum.tracker.util.Managers;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +19,8 @@ public class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskMan
     protected FileBackedTaskManager createTaskManager() {
         try {
             tempFile = Files.createTempFile("tasks", ".csv").toFile();
-            return Managers.getFileBackedManager(tempFile);
+            // Создаем FileBackedTaskManager напрямую
+            return new FileBackedTaskManager(tempFile);
         } catch (IOException e) {
             throw new RuntimeException("Не удалось создать временный файл", e);
         }
@@ -33,7 +33,7 @@ public class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskMan
 
     @Test
     void testSaveAndLoadEmptyManager() {
-        ((FileBackedTaskManager) manager).save();
+        manager.save(); // Прямой вызов без приведения типа
         FileBackedTaskManager loaded = FileBackedTaskManager.loadFromFile(tempFile);
         assertTrue(loaded.getAllTasks().isEmpty(), "Список задач должен быть пуст");
         assertTrue(loaded.getAllEpics().isEmpty(), "Список эпиков должен быть пуст");
@@ -50,7 +50,7 @@ public class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskMan
         subtask.setStartTime(LocalDateTime.of(2025, 6, 8, 11, 0));
         subtask.setDuration(Duration.ofMinutes(45));
 
-        ((FileBackedTaskManager) manager).save();
+        manager.save(); // Прямой вызов без приведения типа
         FileBackedTaskManager loaded = FileBackedTaskManager.loadFromFile(tempFile);
 
         assertEquals(1, loaded.getAllTasks().size(), "Должна быть одна задача");
@@ -68,7 +68,7 @@ public class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskMan
         Task task = manager.createTask(new Task("Task", "Desc"));
         manager.getTask(task.getId());
 
-        ((FileBackedTaskManager) manager).save();
+        manager.save(); // Прямой вызов без приведения типа
         FileBackedTaskManager loaded = FileBackedTaskManager.loadFromFile(tempFile);
 
         assertEquals(1, loaded.getHistory().size(), "История должна содержать одну задачу");
@@ -93,7 +93,7 @@ public class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskMan
     @Test
     void testFileSaveDoesNotThrow() {
         Task task = manager.createTask(new Task("Task", "Desc"));
-        assertDoesNotThrow(((FileBackedTaskManager) manager)::save,
+        assertDoesNotThrow(manager::save, // Прямой вызов через method reference
                 "Сохранение в корректный файл не должно вызывать исключение");
     }
 }
