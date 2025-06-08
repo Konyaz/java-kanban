@@ -292,38 +292,38 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     protected void updateEpicTime(Epic epic) {
-        List<Subtask> epicSubtasks = getEpicSubtasks(epic.getId());
-        if (epicSubtasks.isEmpty()) {
+        List<Subtask> subtasks = getEpicSubtasks(epic.getId());
+
+        if (subtasks.isEmpty()) {
             epic.setStartTime(null);
-            epic.setEndTime(null);
             epic.setDuration(null);
+            epic.setEndTime(null);
             return;
         }
 
-        LocalDateTime start = null;
-        LocalDateTime end = null;
-        Duration total = Duration.ZERO;
+        // Получаем минимальное время начала
+        LocalDateTime start = subtasks.stream()
+                .map(Subtask::getStartTime)
+                .filter(Objects::nonNull)
+                .min(LocalDateTime::compareTo)
+                .orElse(null);
 
-        for (Subtask subtask : epicSubtasks) {
-            if (subtask.getStartTime() == null || subtask.getDuration() == null) {
-                continue;
-            }
+        // Получаем максимальное время окончания
+        LocalDateTime end = subtasks.stream()
+                .map(Subtask::getEndTime)
+                .filter(Objects::nonNull)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
 
-            LocalDateTime subtaskStart = subtask.getStartTime();
-            LocalDateTime subtaskEnd = subtask.getEndTime();
-
-            if (start == null || subtaskStart.isBefore(start)) {
-                start = subtaskStart;
-            }
-            if (end == null || subtaskEnd.isAfter(end)) {
-                end = subtaskEnd;
-            }
-            total = total.plus(subtask.getDuration());
-        }
+        // Суммируем продолжительности
+        Duration duration = subtasks.stream()
+                .map(Subtask::getDuration)
+                .filter(Objects::nonNull)
+                .reduce(Duration.ZERO, Duration::plus);
 
         epic.setStartTime(start);
+        epic.setDuration(duration.isZero() ? null : duration);
         epic.setEndTime(end);
-        epic.setDuration(total.isZero() ? null : total);
     }
 
     protected boolean hasTimeConflict(Task newTask) {
@@ -336,7 +336,7 @@ public class InMemoryTaskManager implements TaskManager {
 
         for (Task existing : prioritizedTasks) {
             if (existing.getId() == newTask.getId()) {
-                continue; // Пропускаем ту же самую задачу при обновлении
+                continue;
             }
             if (existing.getStartTime() == null || existing.getDuration() == null) {
                 continue;

@@ -7,11 +7,13 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
     private final File file;
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     public FileBackedTaskManager(File file) {
         super();
@@ -66,18 +68,20 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                         if (task.getStartTime() != null) {
                             manager.prioritizedTasks.add(task);
                         }
-                        manager.counterId = Math.max(manager.counterId, id);
+                        manager.counterId = Math.max(manager.counterId, id + 1);
                     }
                 } else {
                     historyIds = historyFromString(line);
                 }
             }
 
+            // Обновляем время и статус эпиков после загрузки всех задач
             manager.epics.values().forEach(epic -> {
                 manager.updateEpicTime(epic);
                 manager.updateEpicStatus(epic);
             });
 
+            // Восстанавливаем историю
             for (int id : historyIds) {
                 if (manager.tasks.containsKey(id)) {
                     manager.historyManager.add(manager.tasks.get(id));
@@ -119,9 +123,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         StringBuilder sb = new StringBuilder();
         sb.append(task.getId()).append(",");
         sb.append(task.getType()).append(",");
-        sb.append(task.getName()).append(",");
+        sb.append(escapeCommas(task.getName())).append(",");
         sb.append(task.getStatus()).append(",");
-        sb.append(task.getDescription()).append(",");
+        sb.append(escapeCommas(task.getDescription())).append(",");
 
         if (task instanceof Subtask) {
             sb.append(((Subtask) task).getEpicId());
@@ -134,7 +138,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         sb.append(",");
 
         if (task.getStartTime() != null) {
-            sb.append(task.getStartTime());
+            sb.append(task.getStartTime().format(DATE_TIME_FORMATTER));
         }
 
         return sb.toString();
@@ -149,9 +153,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         try {
             int id = Integer.parseInt(parts[0]);
             TaskType type = TaskType.valueOf(parts[1]);
-            String name = parts[2];
+            String name = unescapeCommas(parts[2]);
             TaskStatus status = TaskStatus.valueOf(parts[3]);
-            String description = parts[4];
+            String description = unescapeCommas(parts[4]);
 
             Duration duration = null;
             if (parts.length > 6 && !parts[6].isEmpty()) {
@@ -160,7 +164,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
             LocalDateTime startTime = null;
             if (parts.length > 7 && !parts[7].isEmpty()) {
-                startTime = LocalDateTime.parse(parts[7]);
+                startTime = LocalDateTime.parse(parts[7], DATE_TIME_FORMATTER);
             }
 
             switch (type) {
@@ -174,6 +178,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                     Epic epic = new Epic(name, description);
                     epic.setId(id);
                     epic.setStatus(status);
+                    epic.setDuration(duration);
+                    epic.setStartTime(startTime);
                     return epic;
                 case SUBTASK:
                     if (parts.length < 6 || parts[5].isEmpty()) {
@@ -290,5 +296,19 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     public void deleteSubtasks() {
         super.deleteSubtasks();
         save();
+    }
+
+    private String escapeCommas(String input) {
+        if (input == null) {
+            return "";
+        }
+        return input.replace(",", "\\,");
+    }
+
+    private String unescapeCommas(String input) {
+        if (input == null) {
+            return "";
+        }
+        return input.replace("\\,", ",");
     }
 }

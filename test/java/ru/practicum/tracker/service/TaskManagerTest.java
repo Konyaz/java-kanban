@@ -251,4 +251,90 @@ public abstract class TaskManagerTest<T extends TaskManager> {
         assertEquals(1, manager.getHistory().size(), "В истории должна остаться одна задача после удаления");
         assertEquals(task1.getId(), manager.getHistory().get(0).getId(), "Оставшаяся задача должна быть task1");
     }
+
+    @Test
+    void testEpicDurationCalculationWithNullValues() {
+        Epic epic = manager.createEpic(new Epic("Epic", "Desc"));
+        Subtask subtask1 = new Subtask("Subtask 1", "Desc", epic.getId());
+        subtask1.setDuration(null);
+        subtask1.setStartTime(null);
+
+        Subtask subtask2 = new Subtask("Subtask 2", "Desc", epic.getId());
+        subtask2.setDuration(Duration.ofMinutes(30));
+        subtask2.setStartTime(LocalDateTime.of(2025, 6, 8, 10, 0));
+
+        manager.createSubtask(subtask1);
+        manager.createSubtask(subtask2);
+
+        assertEquals(Duration.ofMinutes(30), epic.getDuration(), "Продолжительность эпика должна учитывать только подзадачи с заданной длительностью");
+    }
+
+    @Test
+    void testPrioritizedTasksWithSameStartTime() {
+        Task task1 = new Task("Task 1", "Desc");
+        task1.setStartTime(LocalDateTime.of(2025, 6, 8, 10, 0));
+        task1.setDuration(Duration.ofMinutes(30));
+        task1.setId(1);
+
+        Task task2 = new Task("Task 2", "Desc");
+        task2.setStartTime(LocalDateTime.of(2025, 6, 8, 10, 0)); // То же время начала
+        task2.setDuration(Duration.ofMinutes(45));
+        task2.setId(2);
+
+        manager.createTask(task1);
+        manager.createTask(task2);
+
+        List<Task> prioritized = manager.getPrioritizedTasks();
+        assertEquals(2, prioritized.size(), "Обе задачи должны быть в списке");
+        assertEquals(1, prioritized.get(0).getId(), "Задача с меньшим ID должна быть первой при одинаковом времени начала");
+        assertEquals(2, prioritized.get(1).getId(), "Задача с большим ID должна быть второй при одинаковом времени начала");
+    }
+
+    @Test
+    void testUpdateTaskWithTimeConflict() {
+        Task task1 = manager.createTask(new Task("Task 1", "Desc"));
+        task1.setStartTime(LocalDateTime.of(2025, 6, 8, 10, 0));
+        task1.setDuration(Duration.ofMinutes(60));
+        manager.updateTask(task1);
+
+        Task task2 = manager.createTask(new Task("Task 2", "Desc"));
+        task2.setStartTime(LocalDateTime.of(2025, 6, 8, 11, 0));
+        task2.setDuration(Duration.ofMinutes(30));
+
+        // Обновляем task2 так, чтобы он конфликтовал с task1
+        task2.setStartTime(LocalDateTime.of(2025, 6, 8, 10, 30));
+        assertThrows(ManagerConflictException.class, () -> manager.updateTask(task2),
+                "Обновление задачи с конфликтующим временем должно вызывать исключение");
+    }
+
+    @Test
+    void testEpicStatusAfterSubtaskDeletion() {
+        Epic epic = manager.createEpic(new Epic("Epic", "Desc"));
+        Subtask subtask1 = manager.createSubtask(new Subtask("Subtask 1", "Desc", TaskStatus.NEW, epic.getId()));
+        Subtask subtask2 = manager.createSubtask(new Subtask("Subtask 2", "Desc", TaskStatus.DONE, epic.getId()));
+
+        assertEquals(TaskStatus.IN_PROGRESS, epic.getStatus(), "Смешанный статус подзадач");
+
+        manager.deleteSubtask(subtask2.getId());
+        assertEquals(TaskStatus.NEW, epic.getStatus(), "После удаления DONE подзадачи статус должен стать NEW");
+
+        manager.deleteSubtask(subtask1.getId());
+        assertEquals(TaskStatus.NEW, epic.getStatus(), "После удаления всех подзадач статус должен остаться NEW");
+    }
+
+    @Test
+    void testHistoryAfterDeletingAllTasks() {
+        Task task1 = manager.createTask(new Task("Task 1", "Desc"));
+        Task task2 = manager.createTask(new Task("Task 2", "Desc"));
+        Epic epic = manager.createEpic(new Epic("Epic", "Desc"));
+
+        manager.getTask(task1.getId());
+        manager.getEpic(epic.getId());
+        manager.getTask(task2.getId());
+
+        manager.deleteTasks();
+        manager.deleteEpics();
+
+        assertTrue(manager.getHistory().isEmpty(), "История должна быть пустой после удаления всех задач");
+    }
 }

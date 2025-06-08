@@ -5,13 +5,14 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class Task {
-    private int id;
-    private String name;
-    private String description;
-    private TaskStatus status;
-    private Duration duration;
-    private LocalDateTime startTime;
+    protected int id;
+    protected String name;
+    protected String description;
+    protected TaskStatus status;
+    protected Duration duration;
+    protected LocalDateTime startTime;
 
+    // Конструкторы
     public Task(String name, String description) {
         this.name = name;
         this.description = description;
@@ -24,6 +25,19 @@ public class Task {
         this.status = status;
     }
 
+    public Task(String name, String description, Duration duration, LocalDateTime startTime) {
+        this(name, description);
+        this.duration = duration;
+        this.startTime = startTime;
+    }
+
+    public Task(String name, String description, TaskStatus status, Duration duration, LocalDateTime startTime) {
+        this(name, description, status);
+        this.duration = duration;
+        this.startTime = startTime;
+    }
+
+    // Геттеры и сеттеры
     public int getId() {
         return id;
     }
@@ -72,6 +86,7 @@ public class Task {
         this.startTime = startTime;
     }
 
+    // Расчет времени окончания
     public LocalDateTime getEndTime() {
         if (startTime == null || duration == null) {
             return null;
@@ -83,6 +98,7 @@ public class Task {
         return TaskType.TASK;
     }
 
+    // Создание копии объекта
     public Task copy() {
         Task copy = new Task(this.name, this.description, this.status);
         copy.setId(this.id);
@@ -91,6 +107,7 @@ public class Task {
         return copy;
     }
 
+    // equals и hashCode
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

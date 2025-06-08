@@ -1,14 +1,13 @@
 package ru.practicum.tracker.model;
 
-import ru.practicum.tracker.service.TaskManagerProvider;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Epic extends Task {
-    private List<Integer> subtaskIds;
+    private final List<Integer> subtaskIds;
     private LocalDateTime endTime;
 
     public Epic(String name, String description) {
@@ -22,7 +21,7 @@ public class Epic extends Task {
     }
 
     public List<Integer> getSubtaskIds() {
-        return subtaskIds;
+        return new ArrayList<>(subtaskIds);
     }
 
     public void addSubtaskId(int id) {
@@ -46,28 +45,12 @@ public class Epic extends Task {
 
     @Override
     public Duration getDuration() {
-        if (subtaskIds.isEmpty()) {
-            return Duration.ZERO;
-        }
-        return Duration.ofMinutes(subtaskIds.stream()
-                .mapToLong(id -> {
-                    Task subtask = TaskManagerProvider.getManager().getSubtask(id);
-                    return subtask != null && subtask.getDuration() != null ? subtask.getDuration().toMinutes() : 0;
-                })
-                .sum());
+        return duration;
     }
 
     @Override
     public LocalDateTime getStartTime() {
-        if (subtaskIds.isEmpty()) {
-            return null;
-        }
-        return subtaskIds.stream()
-                .map(id -> TaskManagerProvider.getManager().getSubtask(id))
-                .filter(subtask -> subtask != null && subtask.getStartTime() != null)
-                .map(Task::getStartTime)
-                .min(LocalDateTime::compareTo)
-                .orElse(null);
+        return startTime;
     }
 
     @Override
@@ -75,10 +58,25 @@ public class Epic extends Task {
         Epic copy = new Epic(this.getName(), this.getDescription());
         copy.setId(this.getId());
         copy.setStatus(this.getStatus());
-        copy.subtaskIds = new ArrayList<>(this.subtaskIds);
+        copy.subtaskIds.addAll(this.subtaskIds);
         copy.setDuration(this.getDuration());
         copy.setStartTime(this.getStartTime());
         copy.setEndTime(this.getEndTime());
         return copy;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        Epic epic = (Epic) o;
+        return Objects.equals(subtaskIds, epic.subtaskIds) &&
+                Objects.equals(endTime, epic.endTime);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), subtaskIds, endTime);
     }
 }
