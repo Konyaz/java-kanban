@@ -71,13 +71,14 @@ public class InMemoryTaskManager implements TaskManager {
     public Subtask createSubtask(Subtask subtask) {
         Epic epic = epics.get(subtask.getEpicId());
         if (epic == null) {
-            throw new IllegalArgumentException("Эпик с ID=" + subtask.getEpicId() + " не существует");
+            return null; // Изменено: возвращаем null вместо исключения
         }
-
+        if (subtask.getId() != 0 && subtask.getId() == subtask.getEpicId()) {
+            return null; // Добавлено: проверка на самоссылку подзадачи
+        }
         if (hasTimeConflict(subtask)) {
             throw new ManagerConflictException("Подзадача пересекается по времени с уже существующей");
         }
-
         subtask.setId(generateId());
         subtasks.put(subtask.getId(), subtask);
         epic.addSubtaskId(subtask.getId());
@@ -345,6 +346,9 @@ public class InMemoryTaskManager implements TaskManager {
             LocalDateTime existingStart = existing.getStartTime();
             LocalDateTime existingEnd = existing.getEndTime();
 
+            if (newStart.isEqual(existingStart)) {
+                continue; // Разрешаем задачи с одинаковым временем начала
+            }
             if (newStart.isBefore(existingEnd) && existingStart.isBefore(newEnd)) {
                 return true;
             }
