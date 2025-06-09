@@ -20,7 +20,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         this.file = file;
     }
 
-    // Добавлен геттер для поля file
     public File getFile() {
         return file;
     }
@@ -144,17 +143,45 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private static Task fromString(String line) {
         String[] parts = line.split(",");
-        if (parts.length < 5) {
+        // Проверяем минимальное количество полей: 7 для задач/эпиков, 8 для подзадач
+        if (parts.length < 7) {
             return null;
         }
 
-        int id = Integer.parseInt(parts[0]);
-        TaskType type = TaskType.valueOf(parts[1]);
-        String name = parts[2];
-        TaskStatus status = TaskStatus.valueOf(parts[3]);
-        String description = parts[4];
-        Duration duration = parts[5].isEmpty() ? null : Duration.ofMinutes(Long.parseLong(parts[5]));
-        LocalDateTime startTime = parts[6].isEmpty() ? null : LocalDateTime.parse(parts[6], FORMATTER);
+        int id;
+        TaskType type;
+        String name;
+        TaskStatus status;
+        String description;
+        Duration duration = null;
+        LocalDateTime startTime = null;
+        int epicId = 0;
+
+        try {
+            id = Integer.parseInt(parts[0]);
+            type = TaskType.valueOf(parts[1]);
+            name = parts[2];
+            status = TaskStatus.valueOf(parts[3]);
+            description = parts[4];
+
+            // Проверяем наличие полей duration и startTime
+            if (parts.length > 5 && !parts[5].isEmpty()) {
+                duration = Duration.ofMinutes(Long.parseLong(parts[5]));
+            }
+            if (parts.length > 6 && !parts[6].isEmpty()) {
+                startTime = LocalDateTime.parse(parts[6], FORMATTER);
+            }
+
+            // Для подзадач проверяем epicId
+            if (type == TaskType.SUBTASK) {
+                if (parts.length < 8) {
+                    return null;
+                }
+                epicId = Integer.parseInt(parts[7]);
+            }
+        } catch (IllegalArgumentException | java.time.format.DateTimeParseException e) {
+            return null; // Некорректный формат данных
+        }
 
         Task task;
         switch (type) {
@@ -169,10 +196,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 ((Epic) task).setEndTime(startTime != null && duration != null ? startTime.plus(duration) : null);
                 break;
             case SUBTASK:
-                if (parts.length < 8) {
-                    return null;
-                }
-                int epicId = Integer.parseInt(parts[7]);
                 task = new Subtask(name, description, status, epicId, duration, startTime);
                 break;
             default:
@@ -188,7 +211,11 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             return historyIds;
         }
         for (String id : line.split(",")) {
-            historyIds.add(Integer.parseInt(id));
+            try {
+                historyIds.add(Integer.parseInt(id));
+            } catch (NumberFormatException e) {
+                // Пропускаем некорректные ID
+            }
         }
         return historyIds;
     }
