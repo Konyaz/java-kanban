@@ -1,11 +1,7 @@
 package ru.practicum.tracker.service;
 
 import ru.practicum.tracker.history.HistoryManager;
-import ru.practicum.tracker.model.Epic;
-import ru.practicum.tracker.model.Subtask;
-import ru.practicum.tracker.model.Task;
-import ru.practicum.tracker.model.TaskStatus;
-import ru.practicum.tracker.model.TaskType;
+import ru.practicum.tracker.model.*;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -14,7 +10,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
     private final File file;
@@ -93,8 +88,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 if (task != null) {
                     if (task instanceof Epic) {
                         manager.epics.put(task.getId(), (Epic) task);
-                    } else if (task instanceof Subtask) {
-                        Subtask subtask = (Subtask) task;
+                    } else if (task instanceof Subtask subtask) {
                         manager.subtasks.put(subtask.getId(), subtask);
                         Epic epic = manager.epics.get(subtask.getEpicId());
                         if (epic != null) {
@@ -169,9 +163,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 break;
             case EPIC:
                 task = new Epic(name, description);
-                ((Epic) task).setStatus(status);
-                ((Epic) task).setDuration(duration);
-                ((Epic) task).setStartTime(startTime);
+                task.setStatus(status);
+                task.setDuration(duration);
+                task.setStartTime(startTime);
                 ((Epic) task).setEndTime(startTime != null && duration != null ? startTime.plus(duration) : null);
                 break;
             case SUBTASK:
