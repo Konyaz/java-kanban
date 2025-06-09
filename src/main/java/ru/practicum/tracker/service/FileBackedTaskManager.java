@@ -143,8 +143,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private static Task fromString(String line) {
         String[] parts = line.split(",");
-        // Проверяем минимальное количество полей: 7 для задач/эпиков, 8 для подзадач
-        if (parts.length < 7) {
+        // Проверяем минимальное количество полей: 5 для задач/эпиков, 8 для подзадач
+        if (parts.length < 5) {
             return null;
         }
 
@@ -164,6 +164,11 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             status = TaskStatus.valueOf(parts[3]);
             description = parts[4];
 
+            // Для подзадач требуется минимум 8 полей
+            if (type == TaskType.SUBTASK && parts.length < 8) {
+                return null;
+            }
+
             // Проверяем наличие полей duration и startTime
             if (parts.length > 5 && !parts[5].isEmpty()) {
                 duration = Duration.ofMinutes(Long.parseLong(parts[5]));
@@ -172,11 +177,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 startTime = LocalDateTime.parse(parts[6], FORMATTER);
             }
 
-            // Для подзадач проверяем epicId
-            if (type == TaskType.SUBTASK) {
-                if (parts.length < 8) {
-                    return null;
-                }
+            // Для подзадач извлекаем epicId
+            if (type == TaskType.SUBTASK && parts.length >= 8) {
                 epicId = Integer.parseInt(parts[7]);
             }
         } catch (IllegalArgumentException | java.time.format.DateTimeParseException e) {
