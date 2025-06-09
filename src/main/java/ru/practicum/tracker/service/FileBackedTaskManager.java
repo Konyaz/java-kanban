@@ -148,16 +148,16 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         }
 
         String[] parts = line.split(",");
-        // Проверяем минимальное количество полей: 5 для задач/эпиков, 8 для подзадач
-        if (parts.length < 5) {
+        // Проверяем минимальное количество полей: 2 для задач/эпиков (id, type), 3 для подзадач (id, type, epicId)
+        if (parts.length < 2) {
             System.err.println("Недостаточно полей в строке: " + line);
             return null;
         }
 
         int id;
         TaskType type;
-        String name = "";
-        TaskStatus status;
+        String name = "Unnamed";
+        TaskStatus status = TaskStatus.NEW;
         String description = "";
         Duration duration = null;
         LocalDateTime startTime = null;
@@ -166,55 +166,53 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         try {
             id = Integer.parseInt(parts[0].trim());
             type = TaskType.valueOf(parts[1].trim());
-            if (parts[2] != null && !parts[2].trim().isEmpty()) {
+
+            // Проверяем наличие остальных полей
+            if (parts.length > 2 && parts[2] != null && !parts[2].trim().isEmpty()) {
                 name = parts[2].trim();
             }
-            status = TaskStatus.valueOf(parts[3].trim());
-            if (parts[4] != null) {
+            if (parts.length > 3 && parts[3] != null && !parts[3].trim().isEmpty()) {
+                status = TaskStatus.valueOf(parts[3].trim());
+            }
+            if (parts.length > 4 && parts[4] != null && !parts[4].trim().isEmpty()) {
                 description = parts[4].trim();
             }
-
-            // Для подзадач требуется минимум 8 полей
-            if (type == TaskType.SUBTASK && parts.length < 8) {
-                System.err.println("Недостаточно полей для подзадачи: " + line);
-                return null;
-            }
-
-            // Проверяем наличие полей duration и startTime
             if (parts.length > 5 && parts[5] != null && !parts[5].trim().isEmpty()) {
                 duration = Duration.ofMinutes(Long.parseLong(parts[5].trim()));
             }
             if (parts.length > 6 && parts[6] != null && !parts[6].trim().isEmpty()) {
                 startTime = LocalDateTime.parse(parts[6].trim(), FORMATTER);
             }
-
-            // Для подзадач извлекаем epicId
-            if (type == TaskType.SUBTASK && parts.length >= 8 && parts[7] != null && !parts[7].trim().isEmpty()) {
+            if (type == TaskType.SUBTASK) {
+                if (parts.length < 8 || parts[7] == null || parts[7].trim().isEmpty()) {
+                    System.err.println("Недостаточно полей для подзадачи или отсутствует epicId: " + line);
+                    return null;
+                }
                 epicId = Integer.parseInt(parts[7].trim());
+                if (epicId == 0) {
+                    System.err.println("Некорректный epicId для подзадачи: " + line);
+                    return null;
+                }
             }
         } catch (IllegalArgumentException | java.time.format.DateTimeParseException e) {
             System.err.println("Ошибка парсинга строки: " + line + ", причина: " + e.getMessage());
-            return null; // Некорректный формат данных
+            return null;
         }
 
         Task task;
         switch (type) {
             case TASK:
-                task = new Task(name.isEmpty() ? "Unnamed Task" : name, description, status, duration, startTime);
+                task = new Task(name, description, status, duration, startTime);
                 break;
             case EPIC:
-                task = new Epic(name.isEmpty() ? "Unnamed Epic" : name, description);
+                task = new Epic(name, description);
                 task.setStatus(status);
                 task.setDuration(duration);
                 task.setStartTime(startTime);
                 ((Epic) task).setEndTime(startTime != null && duration != null ? startTime.plus(duration) : null);
                 break;
             case SUBTASK:
-                if (epicId == 0) {
-                    System.err.println("Некорректный epicId для подзадачи: " + line);
-                    return null;
-                }
-                task = new Subtask(name.isEmpty() ? "Unnamed Subtask" : name, description, status, epicId, duration, startTime);
+                task = new Subtask(name, description, status, epicId, duration, startTime);
                 break;
             default:
                 System.err.println("Неизвестный тип задачи: " + line);
