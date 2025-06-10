@@ -14,14 +14,17 @@ public class InMemoryHistoryManager implements HistoryManager {
         Node prev;
         Node next;
 
-        Node(Task task) {
+        Node(Task task, Node prev, Node next) {
             this.task = task;
+            this.prev = prev;
+            this.next = next;
         }
     }
 
     private final Map<Integer, Node> nodeMap = new HashMap<>();
     private Node head;
     private Node tail;
+    private int size = 0;
 
     @Override
     public void add(Task task) {
@@ -29,21 +32,27 @@ public class InMemoryHistoryManager implements HistoryManager {
             return;
         }
 
-        // Удаляем старую задачу из истории, если она была
+        // Удаляем существующую запись, если есть
         remove(task.getId());
 
-        // Добавляем копию задачи в конец списка
-        linkLast(task.copy());
+        // Создаем копию задачи для истории
+        Task taskCopy = task.copy();
 
-        // Добавляем в мапу
+        // Добавляем задачу в конец списка
+        linkLast(taskCopy);
+
+        // Сохраняем в мапе
         nodeMap.put(task.getId(), tail);
+        size++;
     }
 
     @Override
     public void remove(int id) {
-        Node node = nodeMap.remove(id);
+        Node node = nodeMap.get(id);
         if (node != null) {
             removeNode(node);
+            nodeMap.remove(id);
+            size--;
         }
     }
 
@@ -52,9 +61,8 @@ public class InMemoryHistoryManager implements HistoryManager {
         return getTasks();
     }
 
-    // Возвращает список задач в порядке от старых к новым
     private List<Task> getTasks() {
-        List<Task> tasks = new ArrayList<>();
+        List<Task> tasks = new ArrayList<>(size);
         Node current = head;
         while (current != null) {
             tasks.add(current.task);
@@ -63,34 +71,39 @@ public class InMemoryHistoryManager implements HistoryManager {
         return tasks;
     }
 
-    // Добавляет новую задачу в конец двусвязного списка
     private void linkLast(Task task) {
-        Node newNode = new Node(task);
-        if (head == null) {
+        final Node newNode = new Node(task, tail, null);
+        if (tail == null) {
             head = newNode;
         } else {
             tail.next = newNode;
-            newNode.prev = tail;
         }
         tail = newNode;
     }
 
-    // Удаляет узел из двусвязного списка
     private void removeNode(Node node) {
         if (node == null) {
             return;
         }
 
-        if (node.prev != null) {
-            node.prev.next = node.next;
+        final Node next = node.next;
+        final Node prev = node.prev;
+
+        if (prev == null) {
+            head = next;
         } else {
-            head = node.next;
+            prev.next = next;
         }
 
-        if (node.next != null) {
-            node.next.prev = node.prev;
+        if (next == null) {
+            tail = prev;
         } else {
-            tail = node.prev;
+            next.prev = prev;
         }
+
+        // Очищаем ссылки для GC
+        node.prev = null;
+        node.next = null;
+        node.task = null;
     }
 }
