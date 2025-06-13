@@ -19,6 +19,8 @@
         <maven.surefire.version>3.1.2</maven.surefire.version>
         <checkstyle.version>3.3.0</checkstyle.version>
         <main.class>ru.practicum.tracker.Main</main.class>
+        <!-- Версия для Gson -->
+        <gson.version>2.10.1</gson.version>
     </properties>
 
     <dependencies>
@@ -28,6 +30,13 @@
             <artifactId>junit-jupiter</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
+        </dependency>
+
+        <!-- Gson для JSON-сериализации -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gson.version}</version>
         </dependency>
     </dependencies>
 
