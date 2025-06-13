@@ -1,7 +1,6 @@
 package ru.practicum.tracker.server;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,6 +9,7 @@ import ru.practicum.tracker.model.Subtask;
 import ru.practicum.tracker.model.Task;
 import ru.practicum.tracker.service.InMemoryTaskManager;
 import ru.practicum.tracker.service.TaskManager;
+import ru.practicum.tracker.util.GsonUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -25,10 +25,7 @@ class HttpTaskServerTest {
     private HttpTaskServer httpTaskServer;
     private TaskManager taskManager;
     private HttpClient httpClient;
-    private final Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
-            .registerTypeAdapter(Duration.class, new DurationAdapter())
-            .create();
+    private final Gson gson = GsonUtils.getGson(); // Используем утилитарный класс для создания Gson
 
     @BeforeEach
     void setUp() throws IOException {
@@ -174,10 +171,7 @@ class HttpTaskServerTasksTest {
     private TaskManager manager;
     private HttpClient client;
     private final String baseUrl = "http://localhost:8080/tasks";
-    private final Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
-            .registerTypeAdapter(Duration.class, new DurationAdapter())
-            .create();
+    private final Gson gson = GsonUtils.getGson();
 
     @BeforeEach
     void setUp() throws IOException {
@@ -301,10 +295,7 @@ class HttpTaskServerSubtasksTest {
     private HttpClient client;
     private Epic epic;
     private final String baseUrl = "http://localhost:8080/subtasks";
-    private final Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
-            .registerTypeAdapter(Duration.class, new DurationAdapter())
-            .create();
+    private final Gson gson = GsonUtils.getGson();
 
     @BeforeEach
     void setUp() throws IOException {
@@ -407,10 +398,7 @@ class HttpTaskServerEpicsTest {
     private TaskManager manager;
     private HttpClient client;
     private final String baseUrl = "http://localhost:8080/epics";
-    private final Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
-            .registerTypeAdapter(Duration.class, new DurationAdapter())
-            .create();
+    private final Gson gson = GsonUtils.getGson();
 
     @BeforeEach
     void setUp() throws IOException {
@@ -499,10 +487,7 @@ class HttpTaskServerHistoryTest {
     private TaskManager manager;
     private HttpClient client;
     private final String baseUrl = "http://localhost:8080/history";
-    private final Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
-            .registerTypeAdapter(Duration.class, new DurationAdapter())
-            .create();
+    private final Gson gson = GsonUtils.getGson();
 
     @BeforeEach
     void setUp() throws IOException {
@@ -554,10 +539,7 @@ class HttpTaskServerPrioritizedTest {
     private TaskManager manager;
     private HttpClient client;
     private final String baseUrl = "http://localhost:8080/prioritized";
-    private final Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
-            .registerTypeAdapter(Duration.class, new DurationAdapter())
-            .create();
+    private final Gson gson = GsonUtils.getGson();
 
     @BeforeEach
     void setUp() throws IOException {
@@ -610,10 +592,7 @@ class HttpTaskServerIntegrationTest {
     private HttpTaskServer server;
     private TaskManager manager;
     private HttpClient client;
-    private final Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
-            .registerTypeAdapter(Duration.class, new DurationAdapter())
-            .create();
+    private final Gson gson = GsonUtils.getGson();
 
     @BeforeEach
     void setUp() throws IOException {
@@ -634,7 +613,7 @@ class HttpTaskServerIntegrationTest {
     // 3. Проверка истории просмотров
     @Test
     void testFullFlow() throws IOException, InterruptedException {
-        // Create Epic
+        // Создание эпика
         Epic epic = new Epic("Epic", "Desc");
         String epicJson = gson.toJson(epic);
         HttpRequest epicRequest = HttpRequest.newBuilder()
@@ -645,7 +624,7 @@ class HttpTaskServerIntegrationTest {
         HttpResponse<String> epicResponse = client.send(epicRequest, HttpResponse.BodyHandlers.ofString());
         assertEquals(201, epicResponse.statusCode());
 
-        // Create Subtask
+        // Создание подзадачи
         Subtask subtask = new Subtask("Subtask", "Desc", 1);
         String subtaskJson = gson.toJson(subtask);
         HttpRequest subtaskRequest = HttpRequest.newBuilder()
@@ -656,7 +635,7 @@ class HttpTaskServerIntegrationTest {
         HttpResponse<String> subtaskResponse = client.send(subtaskRequest, HttpResponse.BodyHandlers.ofString());
         assertEquals(201, subtaskResponse.statusCode());
 
-        // Verify history
+        // Проверка истории
         HttpRequest historyRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/history"))
                 .GET()
