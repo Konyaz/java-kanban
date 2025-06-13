@@ -163,6 +163,76 @@ class HttpTaskServerTest {
         assertEquals(earlyTask.getId(), prioritized[0].getId());
         assertEquals(lateTask.getId(), prioritized[1].getId());
     }
+
+    // Тест полного сценария: создание, получение, проверка истории, удаление
+    @Test
+    void testFullFlow() throws IOException, InterruptedException {
+        // Создаем задачу
+        Task task = new Task("Full Flow Task", "Description");
+        task.setStartTime(LocalDateTime.now());
+        task.setDuration(Duration.ofMinutes(30));
+
+        String taskJson = gson.toJson(task);
+        HttpRequest createRequest = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/tasks"))
+                .POST(HttpRequest.BodyPublishers.ofString(taskJson))
+                .header("Content-Type", "application/json")
+                .build();
+
+        HttpResponse<String> createResponse = httpClient.send(createRequest, HttpResponse.BodyHandlers.ofString());
+        assertEquals(201, createResponse.statusCode(), "Не удалось создать задачу");
+
+        // Получаем задачу
+        Task createdTask = gson.fromJson(createResponse.body(), Task.class);
+        HttpRequest getRequest = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/tasks/" + createdTask.getId()))
+                .GET()
+                .build();
+
+        HttpResponse<String> getResponse = httpClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, getResponse.statusCode(), "Не удалось получить задачу");
+
+        // Проверяем историю
+        HttpRequest historyRequest = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/history"))
+                .GET()
+                .build();
+
+        HttpResponse<String> historyResponse = httpClient.send(historyRequest, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, historyResponse.statusCode(), "Не удалось получить историю");
+
+        // Проверяем, что задача есть в истории
+        String historyJson = historyResponse.body();
+        assertTrue(historyJson.contains(String.valueOf(createdTask.getId())),
+                "Задача должна быть в истории после просмотра");
+
+        // Удаляем задачу
+        HttpRequest deleteRequest = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/tasks/" + createdTask.getId()))
+                .DELETE()
+                .build();
+
+        HttpResponse<String> deleteResponse = httpClient.send(deleteRequest, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, deleteResponse.statusCode(), "Не удалось удалить задачу");
+
+        // Проверяем, что задача удалена
+        HttpRequest getAfterDeleteRequest = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/tasks/" + createdTask.getId()))
+                .GET()
+                .build();
+
+        HttpResponse<String> getAfterDeleteResponse = httpClient.send(getAfterDeleteRequest, HttpResponse.BodyHandlers.ofString());
+        assertEquals(404, getAfterDeleteResponse.statusCode(), "Задача не должна существовать после удаления");
+
+        // Проверяем историю после удаления
+        HttpResponse<String> historyAfterDeleteResponse = httpClient.send(historyRequest, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, historyAfterDeleteResponse.statusCode(), "Не удалось получить историю после удаления");
+
+        // Убеждаемся, что задачи нет в истории
+        String historyAfterDeleteJson = historyAfterDeleteResponse.body();
+        assertFalse(historyAfterDeleteJson.contains(String.valueOf(createdTask.getId())),
+                "Задачи не должно быть в истории после удаления");
+    }
 }
 
 // Тесты для работы с задачами (Task)
@@ -622,10 +692,13 @@ class HttpTaskServerIntegrationTest {
                 .header("Content-Type", "application/json")
                 .build();
         HttpResponse<String> epicResponse = client.send(epicRequest, HttpResponse.BodyHandlers.ofString());
-        assertEquals(201, epicResponse.statusCode());
+        assertEquals(201, epicResponse.statusCode(), "Не удалось создать эпик");
 
-        // Создание подзадачи
-        Subtask subtask = new Subtask("Subtask", "Desc", 1);
+        // Получаем созданный эпик для извлечения его ID
+        Epic createdEpic = gson.fromJson(epicResponse.body(), Epic.class);
+
+        // Создание подзадачи с использованием ID созданного эпика
+        Subtask subtask = new Subtask("Subtask", "Desc", createdEpic.getId());
         String subtaskJson = gson.toJson(subtask);
         HttpRequest subtaskRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/subtasks"))
@@ -633,7 +706,16 @@ class HttpTaskServerIntegrationTest {
                 .header("Content-Type", "application/json")
                 .build();
         HttpResponse<String> subtaskResponse = client.send(subtaskRequest, HttpResponse.BodyHandlers.ofString());
-        assertEquals(201, subtaskResponse.statusCode());
+        assertEquals(201, subtaskResponse.statusCode(), "Не удалось создать подзадачу");
+
+        // Получаем подзадачу для добавления в историю
+        Subtask createdSubtask = gson.fromJson(subtaskResponse.body(), Subtask.class);
+        HttpRequest getSubtaskRequest = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/subtasks/" + createdSubtask.getId()))
+                .GET()
+                .build();
+        HttpResponse<String> getSubtaskResponse = client.send(getSubtaskRequest, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, getSubtaskResponse.statusCode(), "Не удалось получить подзадачу");
 
         // Проверка истории
         HttpRequest historyRequest = HttpRequest.newBuilder()
@@ -641,7 +723,7 @@ class HttpTaskServerIntegrationTest {
                 .GET()
                 .build();
         HttpResponse<String> historyResponse = client.send(historyRequest, HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, historyResponse.statusCode());
-        assertTrue(historyResponse.body().contains("Subtask"));
+        assertEquals(200, historyResponse.statusCode(), "Не удалось получить историю");
+        assertTrue(historyResponse.body().contains("Subtask"), "Подзадача должна быть в истории после просмотра");
     }
 }
