@@ -36,7 +36,9 @@ public class SubtaskHandler extends BaseHttpHandler {
                     handleCreateOrUpdateSubtask(exchange);
                     break;
                 case "DELETE":
-                    if (pathParts.length == 3) {
+                    if (pathParts.length == 2) {
+                        handleDeleteAllSubtasks(exchange);
+                    } else if (pathParts.length == 3) {
                         handleDeleteSubtask(exchange, pathParts[2]);
                     } else {
                         sendNotFound(exchange);
@@ -94,6 +96,8 @@ public class SubtaskHandler extends BaseHttpHandler {
             sendBadRequest(exchange, "Неверный формат JSON");
         } catch (ManagerConflictException e) {
             sendHasInteractions(exchange);
+        } catch (Exception e) {
+            sendInternalError(exchange);
         }
     }
 
@@ -106,5 +110,10 @@ public class SubtaskHandler extends BaseHttpHandler {
 
         manager.deleteSubtask(id);
         sendText(exchange, "{\"message\":\"Подзадача удалена\"}");
+    }
+
+    private void handleDeleteAllSubtasks(HttpExchange exchange) throws IOException {
+        manager.deleteSubtasks();
+        sendText(exchange, "{\"message\":\"Все подзадачи удалены\"}");
     }
 }

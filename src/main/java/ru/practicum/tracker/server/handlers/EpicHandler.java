@@ -39,7 +39,9 @@ public class EpicHandler extends BaseHttpHandler {
                     handleCreateOrUpdateEpic(exchange);
                     break;
                 case "DELETE":
-                    if (pathParts.length == 3) {
+                    if (pathParts.length == 2) {
+                        handleDeleteAllEpics(exchange);
+                    } else if (pathParts.length == 3) {
                         handleDeleteEpic(exchange, pathParts[2]);
                     } else {
                         sendNotFound(exchange);
@@ -107,6 +109,8 @@ public class EpicHandler extends BaseHttpHandler {
             }
         } catch (JsonSyntaxException e) {
             sendBadRequest(exchange, "Неверный формат JSON");
+        } catch (Exception e) {
+            sendInternalError(exchange);
         }
     }
 
@@ -119,5 +123,10 @@ public class EpicHandler extends BaseHttpHandler {
 
         manager.deleteEpic(id);
         sendText(exchange, "{\"message\":\"Эпик удален\"}");
+    }
+
+    private void handleDeleteAllEpics(HttpExchange exchange) throws IOException {
+        manager.deleteEpics();
+        sendText(exchange, "{\"message\":\"Все эпики удалены\"}");
     }
 }

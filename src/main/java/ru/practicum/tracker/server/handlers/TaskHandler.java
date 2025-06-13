@@ -36,7 +36,9 @@ public class TaskHandler extends BaseHttpHandler {
                     handleCreateOrUpdateTask(exchange);
                     break;
                 case "DELETE":
-                    if (pathParts.length == 3) {
+                    if (pathParts.length == 2) {
+                        handleDeleteAllTasks(exchange);
+                    } else if (pathParts.length == 3) {
                         handleDeleteTask(exchange, pathParts[2]);
                     } else {
                         sendNotFound(exchange);
@@ -90,6 +92,8 @@ public class TaskHandler extends BaseHttpHandler {
             sendBadRequest(exchange, "Неверный формат JSON");
         } catch (ManagerConflictException e) {
             sendHasInteractions(exchange);
+        } catch (Exception e) {
+            sendInternalError(exchange);
         }
     }
 
@@ -102,5 +106,10 @@ public class TaskHandler extends BaseHttpHandler {
 
         manager.deleteTask(id);
         sendText(exchange, "{\"message\":\"Задача удалена\"}");
+    }
+
+    private void handleDeleteAllTasks(HttpExchange exchange) throws IOException {
+        manager.deleteTasks();
+        sendText(exchange, "{\"message\":\"Все задачи удалены\"}");
     }
 }
