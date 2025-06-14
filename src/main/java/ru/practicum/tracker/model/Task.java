@@ -13,6 +13,10 @@ public class Task {
     protected LocalDateTime startTime;
 
     // Конструкторы
+    public Task() {
+        // Конструктор по умолчанию для Gson
+    }
+
     public Task(String name, String description) {
         this.name = name;
         this.description = description;

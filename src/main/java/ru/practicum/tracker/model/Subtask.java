@@ -8,6 +8,10 @@ public class Subtask extends Task {
     private int epicId;
 
     // Конструкторы
+    public Subtask() {
+        super("", "");
+    }
+
     public Subtask(String name, String description, int epicId) {
         super(name, description);
         this.epicId = epicId;
